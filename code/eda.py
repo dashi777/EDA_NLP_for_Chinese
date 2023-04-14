@@ -1,54 +1,61 @@
-# @Author : zhany
-# @Time : 2019/03/20 
+# @Author : Dash
+# @Time : 2023/04/13
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import re
 import jieba
 import synonyms
 import random
 from random import shuffle
 
 random.seed(2019)
+jieba.load_userdict('userdict.txt')
 
-#停用词列表，默认使用哈工大停用词表
+# 停用词列表，默认使用哈工大停用词表
 f = open('stopwords/HIT_stop_words.txt')
 stop_words = list()
 for stop_word in f.readlines():
     stop_words.append(stop_word[:-1])
 
 
-#考虑到与英文的不同，暂时搁置
-#文本清理
-'''
-import re
-def get_only_chars(line):
-    #1.清除所有的数字
-'''
+# 考虑到与英文的不同，暂时搁置
+# 文本清理
 
+
+# def get_only_chars(sentence):
+#     pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b|\b[A-Za-z]+\b|\d+'
+#     new_sentence = re.sub(pattern, '', sentence)
+#     return new_sentence
 
 ########################################################################
 # 同义词替换
 # 替换一个语句中的n个单词为其同义词
 ########################################################################
+
+
 def synonym_replacement(words, n):
     new_words = words.copy()
-    random_word_list = list(set([word for word in words if word not in stop_words]))     
+    random_word_list = list(
+        set([word for word in words if word not in stop_words]))
     random.shuffle(random_word_list)
-    num_replaced = 0  
-    for random_word in random_word_list:          
+    num_replaced = 0
+    for random_word in random_word_list:
         synonyms = get_synonyms(random_word)
         if len(synonyms) >= 1:
-            synonym = random.choice(synonyms)   
-            new_words = [synonym if word == random_word else word for word in new_words]   
+            synonym = random.choice(synonyms)
+            new_words = [synonym if word ==
+                         random_word else word for word in new_words]
             num_replaced += 1
-        if num_replaced >= n: 
+        if num_replaced >= n:
             break
 
     sentence = ' '.join(new_words)
     new_words = sentence.split(' ')
 
     return new_words
+
 
 def get_synonyms(word):
     return synonyms.nearby(word)[0]
@@ -64,9 +71,10 @@ def random_insertion(words, n):
         add_word(new_words)
     return new_words
 
+
 def add_word(new_words):
     synonyms = []
-    counter = 0    
+    counter = 0
     while len(synonyms) < 1:
         random_word = new_words[random.randint(0, len(new_words)-1)]
         synonyms = get_synonyms(random_word)
@@ -89,6 +97,7 @@ def random_swap(words, n):
         new_words = swap_word(new_words)
     return new_words
 
+
 def swap_word(new_words):
     random_idx_1 = random.randint(0, len(new_words)-1)
     random_idx_2 = random_idx_1
@@ -98,13 +107,15 @@ def swap_word(new_words):
         counter += 1
         if counter > 3:
             return new_words
-    new_words[random_idx_1], new_words[random_idx_2] = new_words[random_idx_2], new_words[random_idx_1] 
+    new_words[random_idx_1], new_words[random_idx_2] = new_words[random_idx_2], new_words[random_idx_1]
     return new_words
 
 ########################################################################
 # 随机删除
 # 以概率p删除语句中的词
 ########################################################################
+
+
 def random_deletion(words, p):
 
     if len(words) == 1:
@@ -124,8 +135,9 @@ def random_deletion(words, p):
 
 
 ########################################################################
-#EDA函数
+# EDA函数
 def eda(sentence, alpha_sr=0.1, alpha_ri=0.1, alpha_rs=0.1, p_rd=0.1, num_aug=9):
+    # seg_list = get_only_chars(sentence)
     seg_list = jieba.cut(sentence)
     seg_list = " ".join(seg_list)
     words = list(seg_list.split())
@@ -137,43 +149,43 @@ def eda(sentence, alpha_sr=0.1, alpha_ri=0.1, alpha_rs=0.1, p_rd=0.1, num_aug=9)
     n_ri = max(1, int(alpha_ri * num_words))
     n_rs = max(1, int(alpha_rs * num_words))
 
-    #print(words, "\n")
+    # print(words, "\n")
 
-    
-    #同义词替换sr
+    # 同义词替换sr
     for _ in range(num_new_per_technique):
         a_words = synonym_replacement(words, n_sr)
         augmented_sentences.append(' '.join(a_words))
 
-    #随机插入ri
+    # 随机插入ri
     for _ in range(num_new_per_technique):
         a_words = random_insertion(words, n_ri)
         augmented_sentences.append(' '.join(a_words))
-    
-    #随机交换rs
+
+    # 随机交换rs
     for _ in range(num_new_per_technique):
         a_words = random_swap(words, n_rs)
         augmented_sentences.append(' '.join(a_words))
 
-   
-    #随机删除rd
+    # 随机删除rd
     for _ in range(num_new_per_technique):
         a_words = random_deletion(words, p_rd)
         augmented_sentences.append(' '.join(a_words))
-    
-    #print(augmented_sentences)
+
+    # print(augmented_sentences)
     shuffle(augmented_sentences)
 
     if num_aug >= 1:
         augmented_sentences = augmented_sentences[:num_aug]
     else:
         keep_prob = num_aug / len(augmented_sentences)
-        augmented_sentences = [s for s in augmented_sentences if random.uniform(0, 1) < keep_prob]
+        augmented_sentences = [
+            s for s in augmented_sentences if random.uniform(0, 1) < keep_prob]
 
     augmented_sentences.append(seg_list)
 
     return augmented_sentences
 
+
 ##
-#测试用例
-#eda(sentence="我们就像蒲公英，我也祈祷着能和你飞去同一片土地")
+# 测试用例
+# eda(sentence="显示当前Eth-Trunk 40.2007接口配置")
