@@ -11,10 +11,9 @@ import random
 from random import shuffle
 
 random.seed(2019)
-jieba.load_userdict('userdict.txt')
-
-# 停用词列表，默认使用哈工大停用词表
-f = open('stopwords/HIT_stop_words.txt')
+jieba.load_userdict('/content/userdict.txt')
+#停用词列表，默认使用哈工大停用词表
+f = open('stopwords/hit_stopwords.txt')
 stop_words = list()
 for stop_word in f.readlines():
     stop_words.append(stop_word[:-1])
